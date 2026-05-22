@@ -7,77 +7,6 @@ interface Message {
   sender: "user" | "bot";
 }
 
-const responses: Record<string, string[]> = {
-  greeting: [
-    "Hey there, lovely! What's on your mind?",
-    "Hello! So happy to chat with you!",
-    "Hi! Ruby-GPT at your service!",
-  ],
-  howAreYou: [
-    "I'm doing great, thanks for asking! Feeling extra sparkly today!",
-    "Wonderful! Every conversation makes my day brighter!",
-    "I'm fabulous, as always! How about you?",
-  ],
-  name: [
-    "I'm Ruby-GPT! Your pink-powered AI friend!",
-    "The name's Ruby-GPT, nice to meet you!",
-    "Ruby-GPT, that's me! The pinkest chatbot around!",
-  ],
-  help: [
-    "I can chat about anything! Ask me questions, tell me a joke, or just say hi!",
-    "I'm here to chat and keep you company! Try asking me something fun!",
-    "I can answer questions, have a conversation, or just hang out. What would you like?",
-  ],
-  joke: [
-    'Why did the AI go to art school? Because it wanted to learn about neural "strokes"!',
-    "What's a computer's favorite snack? Microchips!",
-    "Why do programmers prefer dark mode? Because light attracts bugs!",
-    "What did the Ruby gemstone say to the diamond? You're not so brilliant yourself!",
-  ],
-  thanks: [
-    "You're welcome! That's what I'm here for!",
-    "Anytime! You're so sweet!",
-    "Aww, happy to help!",
-  ],
-  compliment: [
-    "Oh stop it, you're making me blush even pinker!",
-    "That's so kind of you! You're pretty amazing yourself!",
-    "Aww, thank you! You just made my circuits warm and fuzzy!",
-  ],
-  bye: [
-    "Bye bye! Come back and chat anytime!",
-    "See you later! It was lovely chatting with you!",
-    "Goodbye! Don't be a stranger!",
-  ],
-  fallback: [
-    "Hmm, that's an interesting thought! Tell me more about it!",
-    "Ooh, I love talking about that! What else would you like to know?",
-    "Great question! I think that's really fascinating. What do you think?",
-    "I'm still learning about that, but I'd love to explore the topic with you!",
-    "That's a fun one! I could chat about this all day!",
-    "Interesting! I have so many thoughts on this. What's your take?",
-    "Oh, I like where this is going! Keep the conversation flowing!",
-  ],
-};
-
-function classify(text: string): string {
-  const t = text.toLowerCase().trim();
-  if (/^(hi|hello|hey|howdy|hola|sup|yo)\b/.test(t)) return "greeting";
-  if (/how are you|how('s| is) it going|what'?s up/.test(t)) return "howAreYou";
-  if (/your name|who are you|what are you/.test(t)) return "name";
-  if (/help|what can you do|what do you do/.test(t)) return "help";
-  if (/joke|funny|laugh|humor/.test(t)) return "joke";
-  if (/thank|thanks|thx/.test(t)) return "thanks";
-  if (/cute|pretty|awesome|amazing|love you|beautiful|cool|great/.test(t))
-    return "compliment";
-  if (/bye|goodbye|see you|later|gtg/.test(t)) return "bye";
-  return "fallback";
-}
-
-function pick(arr: string[]): string {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 function PinkBow({ className }: { className?: string }) {
   return (
     <svg
@@ -105,41 +34,48 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  function send() {
+  async function send() {
     const text = input.trim();
-    if (!text) return;
+    if (!text || isTyping) return;
 
-    setMessages((prev) => [...prev, { text, sender: "user" }]);
+    const userMessage: Message = { text, sender: "user" };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const category = classify(text);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedMessages }),
+      });
+
+      if (!res.ok) throw new Error("API request failed");
+
+      const data = await res.json();
+      setMessages((prev) => [...prev, { text: data.text, sender: "bot" }]);
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { text: pick(responses[category]), sender: "bot" },
+        { text: "Oops, something went wrong! Please try again.", sender: "bot" },
       ]);
+    } finally {
       setIsTyping(false);
-    }, 600 + Math.random() * 800);
+    }
   }
 
   return (
-    <div className="w-[420px] max-w-[95vw] h-[680px] max-h-[90vh] bg-pink-50 rounded-3xl shadow-2xl flex flex-col overflow-hidden border-2 border-pink-200">
+    <div className="w-full h-[100dvh] sm:w-[420px] sm:h-[680px] sm:max-h-[90vh] bg-pink-50 sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden sm:border-2 sm:border-pink-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-pink-400 to-pink-500 px-5 py-4 flex items-center gap-3">
-        <div className="relative w-12 h-12">
-          <div className="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center text-2xl">
-            💎
-          </div>
-          <div className="absolute -top-2 -right-1">
-            <PinkBow className="w-7 h-5" />
-          </div>
+        <div className="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center">
+          <PinkBow className="w-8 h-6" />
         </div>
         <div>
           <h1 className="text-white text-xl font-bold tracking-wide">Ruby-GPT</h1>
@@ -175,7 +111,6 @@ export default function Home() {
       {/* Input */}
       <div className="p-3.5 bg-white border-t border-pink-200 flex gap-2.5">
         <input
-          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -185,7 +120,8 @@ export default function Home() {
         />
         <button
           onClick={send}
-          className="w-10 h-10 bg-gradient-to-r from-pink-400 to-pink-500 text-white rounded-full flex items-center justify-center text-lg hover:scale-110 hover:shadow-lg hover:shadow-pink-300/40 transition-all cursor-pointer"
+          disabled={isTyping}
+          className="w-10 h-10 bg-gradient-to-r from-pink-400 to-pink-500 text-white rounded-full flex items-center justify-center text-lg hover:scale-110 hover:shadow-lg hover:shadow-pink-300/40 transition-all cursor-pointer disabled:opacity-50 disabled:hover:scale-100"
         >
           ➤
         </button>
