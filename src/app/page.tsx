@@ -27,7 +27,7 @@ function PinkBow({ className }: { className?: string }) {
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
-      text: "Hi there! I'm Ruby-GPT, your sparkly pink AI assistant! How can I help you today?",
+      text: "嗨妈妈！我是Ruby，你的小宝贝！今天想和我聊什么呀？",
       sender: "bot",
     },
   ]);
@@ -84,7 +84,16 @@ export default function Home() {
         </div>
         <select
           value={parentRole}
-          onChange={(e) => setParentRole(e.target.value as "mother" | "father")}
+          onChange={(e) => {
+            const role = e.target.value as "mother" | "father";
+            setParentRole(role);
+            setMessages([{
+              text: role === "father"
+                ? "Hi Dad! I'm Ruby, your little sweetheart! What do you wanna talk about today?"
+                : "嗨妈妈！我是Ruby，你的小宝贝！今天想和我聊什么呀？",
+              sender: "bot",
+            }]);
+          }}
           className="bg-pink-300/40 text-white text-xs rounded-full px-3 py-1.5 outline-none border border-pink-300/50 cursor-pointer"
         >
           <option value="mother" className="text-pink-900">媽媽</option>
