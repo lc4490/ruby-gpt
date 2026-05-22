@@ -87,8 +87,8 @@ export default function Home() {
           onChange={(e) => setParentRole(e.target.value as "mother" | "father")}
           className="bg-pink-300/40 text-white text-xs rounded-full px-3 py-1.5 outline-none border border-pink-300/50 cursor-pointer"
         >
-          <option value="mother" className="text-pink-900">Mom</option>
-          <option value="father" className="text-pink-900">Dad</option>
+          <option value="mother" className="text-pink-900">媽媽</option>
+          <option value="father" className="text-pink-900">爸爸</option>
         </select>
       </div>
 
