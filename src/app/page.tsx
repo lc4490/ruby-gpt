@@ -33,6 +33,7 @@ export default function Home() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [parentRole, setParentRole] = useState<"mother" | "father">("mother");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, parentRole }),
       });
 
       if (!res.ok) throw new Error("API request failed");
@@ -77,10 +78,18 @@ export default function Home() {
         <div className="w-12 h-12 bg-pink-50 rounded-full flex items-center justify-center">
           <PinkBow className="w-8 h-6" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-white text-xl font-bold tracking-wide">Ruby-GPT</h1>
           <p className="text-pink-100 text-xs">Your sparkly AI assistant</p>
         </div>
+        <select
+          value={parentRole}
+          onChange={(e) => setParentRole(e.target.value as "mother" | "father")}
+          className="bg-pink-300/40 text-white text-xs rounded-full px-3 py-1.5 outline-none border border-pink-300/50 cursor-pointer"
+        >
+          <option value="mother" className="text-pink-900">Mom</option>
+          <option value="father" className="text-pink-900">Dad</option>
+        </select>
       </div>
 
       {/* Messages */}
